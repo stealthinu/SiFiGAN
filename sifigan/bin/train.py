@@ -160,7 +160,8 @@ class Trainer(object):
         # parse batch
         x, d, y = batch
         x = tuple([x.to(self.device) for x in x])
-        d = tuple([d[:1].to(self.device) for d in d])
+        #d = tuple([d[:1].to(self.device) for d in d])
+        d = tuple([d.to(self.device) for d in d])
         z, c, f0 = x
         y = y.to(self.device)
 

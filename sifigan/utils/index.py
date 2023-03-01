@@ -32,22 +32,32 @@ def pd_indexing(x, d, dilation, batch_index, ch_index):
     idxP = idxP.to(x.device)
     idxP = torch.add(-dilations, idxP)
     idxP = idxP.round().long()
-    maxP = -((torch.min(idxP) + batch_length))
-    assert maxP >= 0
+    #maxP = -((torch.min(idxP) + batch_length))
+    maxP = -((torch.min(idxP, dim=2).values + batch_length))
+    assert torch.all(maxP >= 0)
     idxP = (batch_index, ch_index, idxP)
     # padding past tensor
-    xP = pad1d((maxP, 0), 0)(x)
+    #xP = pad1d((maxP, 0), 0)(x)
+    maxPall = torch.max(maxP)
+    xP = pad1d((maxPall, 0), 0)(x)
+    for b in range(maxP.size(0)):
+        xP[b] = pad1d((maxP[b], maxPall - maxP[b]), 0)(x[b])
 
     # get future index
     idxF = torch.arange(0, batch_length).float()
     idxF = idxF.to(x.device)
     idxF = torch.add(dilations, idxF)
     idxF = idxF.round().long()
-    maxF = torch.max(idxF) - (batch_length - 1)
-    assert maxF >= 0
+    #maxF = torch.max(idxF) - (batch_length - 1)
+    maxF = torch.max(idxF, dim=2).values - (batch_length - 1)
+    assert torch.all(maxF >= 0)
     idxF = (batch_index, ch_index, idxF)
     # padding future tensor
-    xF = pad1d((0, maxF), 0)(x)
+    #xF = pad1d((0, maxF), 0)(x)
+    maxFall = torch.max(maxF)
+    xF = pad1d((0, maxFall), 0)(x)
+    for b in range(maxF.size(0)):
+        xF[b] = pad1d((maxFall - maxF[b], maxF[b]), 0)(x[b])
 
     return xP[idxP], xF[idxF]
 
